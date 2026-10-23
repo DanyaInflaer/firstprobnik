@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Инвестиции и уровень жизни в России: свежие данные, графики, сравнение регионов, калькуляторы вклада и ипотеки.">
+<title>Инвестиции и уровень жизни</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Onest:wght@400;500;600&family=Unbounded:wght@500;700&display=swap">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand"><span class="ph">{{ team.name }}</span></div>
+    <nav class="nav" aria-label="Разделы">
+      <a href="#privet">Приветствие</a>
+      <a href="#dannye">Данные</a>
+      <a href="#dinamika">Динамика</a>
+      <a href="#regiony">Регионы</a>
+      <a href="#kalkulyatory">Калькуляторы</a>
+      <a href="#vyvody">Что это значит</a>
+      <a href="#o-nas">О нас</a>
+    </nav>
+  </header>
+
+  <section class="hero" id="privet">
+    <div>
+      <div class="eyebrow">Россия · данные на {{ asof }}</div>
+      <h1>Здравствуйте! Мы команда <span class="ph">{{ team.name }}</span></h1>
+      <p class="lead">Мы рады, что вы зашли. Мы помогаем разобраться, куда движется российская экономика, как живут люди в стране и что это значит для тех, кто думает о вложениях.</p>
+      <p class="lead">Ниже собраны свежие цифры, графики за год, сравнение регионов и два калькулятора: вклада и ипотеки. В конце страницы мы рассказываем о себе и о том, чем можем быть полезны.</p>
+      <p class="sign"><span class="ph">{{ team.signer }}</span><span>от лица всей команды</span></p>
+    </div>
+    <aside class="glance" aria-label="Коротко">
+      <h2>Россия сейчас</h2>
+      <dl>
+        {% for name, value in glance %}
+        <div class="row"><dt>{{ name }}</dt><dd>{{ value }}</dd></div>
+        {% endfor %}
+      </dl>
+    </aside>
+  </section>
+
+  <!-- ===================== ДАННЫЕ ===================== -->
+  <section class="band" id="dannye">
+    <div class="sec-head">
+      <h2>Инвестиции и уровень жизни в России</h2>
+      <p>Доходы растут, безработица остаётся низкой, а вложения в основной капитал сокращаются, и деньги в экономике остаются дорогими. Все показатели ниже взяты из последних публикаций Росстата, Банка России и Московской биржи.</p>
+    </div>
+    <div class="stamp">{{ live_note }} Остальные показатели обновлены {{ updated }}, последний месяц с данными указан у каждой цифры.</div>
+
+    {% macro cards(items) %}
+    <div class="cards">
+      {% for c in items %}
+      <article class="card">
+        <div class="k">{{ c.k }}</div>
+        <div class="v {{ c.tone }}">{{ c.v }}{% if c.unit %}<small>{{ c.unit }}</small>{% endif %}</div>
+        <div class="n">{{ c.n }}</div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endmacro %}
+
+    <h3 class="group">Как живут люди</h3>
+    {{ cards(people) }}
+
+    <h3 class="group">Что происходит с вложениями</h3>
+    {{ cards(invest) }}
+
+    <h3 class="group">Сколько стоят деньги</h3>
+    <div class="scale">
+      <h4>Ставки и инфляция, % годовых</h4>
+      <p class="sub">{{ scale_sub }}</p>
+      <div class="bars" role="img" aria-label="Диаграмма ставок и инфляции, % годовых">
+        {% for b in bars %}
+        <div class="bar">
+          <div class="l">{{ b.label }}</div>
+          <div class="track"><div class="fill{% if b.alt %} alt{% endif %}" style="width: {{ b.width }}%"></div></div>
+          <div class="num">{{ b.text }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="axis" aria-hidden="true"><div>{% for t in axis %}<span>{{ t }}</span>{% endfor %}</div></div>
+    </div>
+    <div class="note">Ипотека на рыночных условиях стоит около 21% по полной стоимости кредита. По льготным программам, например IT-ипотеке, дальневосточной и сельской, ставка держится в пределах 6%. Вклады в крупнейших банках дают 13,06% в среднем по максимальным ставкам за первую декаду октября.</div>
+  </section>
+
+  <!-- ===================== ДИНАМИКА ===================== -->
+  <section class="band" id="dinamika">
+    <div class="sec-head">
+      <h2>Как менялись ставка, цены и зарплаты</h2>
+      <p>{{ dyn_lead }}</p>
+    </div>
+
+    <div class="chart-box">
+      <div class="tabs" role="tablist" aria-label="Выбор графика">
+        <button type="button" role="tab" id="tab-rate" aria-controls="panel-rate" aria-selected="true" class="tab">Ставка и инфляция</button>
+        <button type="button" role="tab" id="tab-wage" aria-controls="panel-wage" aria-selected="false" class="tab" tabindex="-1">Зарплаты</button>
+      </div>
+
+      <div id="panel-rate" role="tabpanel" aria-labelledby="tab-rate">
+        <div class="legend">
+          <span class="lg lg1">Ключевая ставка, %</span>
+          <span class="lg lg2">Инфляция за 12 месяцев, %</span>
+        </div>
+        <div class="readout" id="readout-rate" aria-live="polite"></div>
+        <div class="chart" id="chart-rate"></div>
+        <p class="chart-note">Ставка показана на конец месяца. Наведите курсор на график или нажмите на него, чтобы увидеть значения. На клавиатуре работают стрелки.</p>
+      </div>
+
+      <div id="panel-wage" role="tabpanel" aria-labelledby="tab-wage" hidden>
+        <div class="legend"><span class="lg lg1">Средняя начисленная зарплата, тыс. ₽ в месяц</span></div>
+        <div class="readout" id="readout-wage" aria-live="polite"></div>
+        <div class="chart" id="chart-wage"></div>
+        <p class="chart-note">В декабре зарплата обычно выше из-за годовых премий. За январь, февраль и март значения в использованных источниках не нашлись, на графике там пропуск.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== РЕГИОНЫ ===================== -->
+  <section class="band" id="regiony">
+    <div class="sec-head">
+      <h2>Сравнение регионов</h2>
+      <p>Зарплаты, безработица и инфляция заметно различаются от региона к региону. Нажмите на название столбца, чтобы отсортировать таблицу.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table class="regions" id="regions-table">
+        <thead>
+          <tr>
+            <th scope="col" class="c-name">Регион</th>
+            <th scope="col" class="num"><button type="button" class="sort" data-key="wage">Зарплата, апрель</button></th>
+            <th scope="col" class="num"><button type="button" class="sort" data-key="ratio">К средней по России</button></th>
+            <th scope="col" class="num"><button type="button" class="sort" data-key="unemp">Безработица, май–июль</button></th>
+            <th scope="col" class="num"><button type="button" class="sort" data-key="infl">Инфляция, сентябрь</button></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="pinned">
+            <th scope="row" class="c-name">{{ russia.name }}</th>
+            <td class="num">{{ "{:,}".format(russia.wage).replace(",", " ") }}&nbsp;₽</td>
+            <td class="num">1,00</td>
+            <td class="num">{{ "%.1f"|format(russia.unemp)|replace(".", ",") }}%</td>
+            <td class="num">{{ "%.2f"|format(russia.infl)|replace(".", ",") }}%</td>
+          </tr>
+          {% for r in regions %}
+          <tr data-wage="{{ r.wage if r.wage else '' }}" data-ratio="{{ r.ratio if r.ratio else '' }}" data-unemp="{{ r.unemp if r.unemp is not none else '' }}" data-infl="{{ r.infl if r.infl is not none else '' }}">
+            <th scope="row" class="c-name">{{ r.name }}</th>
+            <td class="num">{% if r.wage %}{{ "{:,}".format(r.wage).replace(",", " ") }}&nbsp;₽{% else %}<span class="dash" title="В использованных источниках значения нет">—</span>{% endif %}</td>
+            <td class="num">{% if r.ratio %}<span class="ratio"><span class="rbar"><i style="width: {{ [r.ratio / 2 * 100, 100]|min }}%"></i></span>{{ "%.2f"|format(r.ratio)|replace(".", ",") }}</span>{% else %}<span class="dash">—</span>{% endif %}</td>
+            <td class="num">{% if r.unemp is not none %}{{ "%.1f"|format(r.unemp)|replace(".", ",") }}%{% else %}<span class="dash" title="В использованных источниках значения нет">—</span>{% endif %}</td>
+            <td class="num">{% if r.infl is not none %}{{ "%.2f"|format(r.infl)|replace(".", ",") }}%{% else %}<span class="dash" title="В использованных источниках значения нет">—</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="chart-note">Прочерк означает, что показателя нет в использованных источниках. Зарплата по регионам дана за апрель 2026, сравнение сделано со средней по России за тот же месяц.</p>
+    <ul class="facts">
+      {% for n in region_notes %}<li>{{ n }}</li>{% endfor %}
+    </ul>
+  </section>
+
+  <!-- ===================== КАЛЬКУЛЯТОРЫ ===================== -->
+  <section class="band" id="kalkulyatory">
+    <div class="sec-head">
+      <h2>Калькуляторы вклада и ипотеки</h2>
+      <p>Ставки подставлены из текущих данных. Их можно изменить на свои. Расчёт ориентировочный, без налогов и комиссий.</p>
+    </div>
+
+    <div class="calcs">
+      <!-- Вклад -->
+      <form class="calc" id="deposit-form" autocomplete="off" onsubmit="return false">
+        <h3>Вклад</h3>
+        <div class="field">
+          <label for="dep-amount">Сумма, ₽</label>
+          <input id="dep-amount" name="amount" type="number" inputmode="numeric" min="1000" step="1000" value="1000000">
+        </div>
+        <div class="field">
+          <label for="dep-months">Срок: <output id="dep-months-out">12 мес.</output></label>
+          <input id="dep-months" name="months" type="range" min="1" max="36" step="1" value="12">
+        </div>
+        <div class="field">
+          <label for="dep-rate">Ставка, % годовых <span class="hint" id="dep-rate-hint"></span></label>
+          <input id="dep-rate" name="rate" type="number" inputmode="decimal" min="0" max="50" step="0.01" value="12.73">
+        </div>
+        <div class="field check">
+          <input id="dep-cap" name="cap" type="checkbox">
+          <label for="dep-cap">Капитализация процентов каждый месяц</label>
+        </div>
+        <dl class="result" aria-live="polite">
+          <div><dt>Доход за срок</dt><dd id="dep-income">—</dd></div>
+          <div><dt>Итоговая сумма</dt><dd id="dep-final">—</dd></div>
+          <div class="sub"><dt>Доход с учётом инфляции {{ infl_now }}%</dt><dd id="dep-real">—</dd></div>
+        </dl>
+        <p class="calc-note" id="dep-warn"></p>
+      </form>
+
+      <!-- Ипотека -->
+      <form class="calc" id="mortgage-form" autocomplete="off" onsubmit="return false">
+        <h3>Ипотека</h3>
+        <div class="field">
+          <label for="mor-price">Стоимость жилья, ₽</label>
+          <input id="mor-price" name="price" type="number" inputmode="numeric" min="100000" step="100000" value="6000000">
+        </div>
+        <div class="field">
+          <label for="mor-down">Первоначальный взнос: <output id="mor-down-out">20%</output></label>
+          <input id="mor-down" name="down" type="range" min="0" max="90" step="1" value="20">
+        </div>
+        <div class="field">
+          <label for="mor-years">Срок: <output id="mor-years-out">20 лет</output></label>
+          <input id="mor-years" name="years" type="range" min="1" max="30" step="1" value="20">
+        </div>
+        <div class="field">
+          <label for="mor-preset">Программа</label>
+          <select id="mor-preset" name="preset">
+            {% for p in mortgage_presets %}<option value="{{ p.rate }}">{{ p.label }}</option>{% endfor %}
+            <option value="custom">Своя ставка</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="mor-rate">Ставка, % годовых</label>
+          <input id="mor-rate" name="rate" type="number" inputmode="decimal" min="0" max="50" step="0.01" value="{{ mortgage_presets[0].rate }}">
+        </div>
+        <dl class="result" aria-live="polite">
+          <div><dt>Платёж в месяц</dt><dd id="mor-pay">—</dd></div>
+          <div><dt>Сумма кредита</dt><dd id="mor-loan">—</dd></div>
+          <div><dt>Переплата за весь срок</dt><dd id="mor-over">—</dd></div>
+          <div class="sub"><dt>Платёж к средней зарплате по России</dt><dd id="mor-share">—</dd></div>
+        </dl>
+        <p class="calc-note">Расчёт по аннуитетной схеме. Рыночные ставки показаны как полная стоимость кредита, поэтому реальный платёж у банка может отличаться.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== ЧТО ЭТО ЗНАЧИТ ===================== -->
+  <section class="band" id="vyvody">
+    <div class="sec-head">
+      <h2>Что это значит для вас</h2>
+      <p>Короткие разборы по типичным ситуациям. Цифры в примерах посчитаны по текущим данным с этой страницы.</p>
+    </div>
+
+    <div class="scenarios">
+      {% for s in scenarios %}
+      <article class="scenario">
+        <h3>{{ s.title }}</h3>
+        <p class="s-lead">{{ s.lead }}</p>
+        <ul>
+          {% for p in s.points %}<li>{{ p }}</li>{% endfor %}
+        </ul>
+        <a class="s-link" href="{{ s.link[0] }}">{{ s.link[1] }}</a>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="sources">
+      Источники данных
+      <ul>
+        {% for title, url in sources %}
+        <li><a href="{{ url }}" target="_blank" rel="noopener">{{ title }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <p class="note">Информация на странице носит справочный характер и не является индивидуальной инвестиционной рекомендацией. Калькуляторы дают оценку и не заменяют расчёт банка.</p>
+  </section>
+
+  <!-- ===================== О НАС ===================== -->
+  <section class="band" id="o-nas">
+    <div class="sec-head">
+      <h2>О нас</h2>
+      <p>Мы небольшая команда, которая работает с частными инвесторами и предпринимателями.</p>
+    </div>
+
+    <div class="about">
+      <div>
+        <h3>Чем мы занимаемся</h3>
+        <ul class="list">
+          {% for title, text in team.services %}
+          <li><strong><span class="ph">{{ title }}</span></strong><span>{{ text }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <h3>Наши преимущества</h3>
+        <ul class="list">
+          {% for title, text in team.advantages %}
+          <li><strong><span class="ph">{{ title }}</span></strong><span>{{ text }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="contact">
+      <p>Напишите нам, и мы ответим на вопросы о ваших планах и о том, чем можем помочь.</p>
+      <div class="addr">
+        <span class="ph">{{ team.email }}</span>
+        <span class="ph">{{ team.phone }}</span>
+      </div>
+    </div>
+
+    <footer>© {{ team.year }} <span class="ph">{{ team.name }}</span></footer>
+  </section>
+
+</div>
+
+<script id="site-data" type="application/json">{{ site_data|tojson }}</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
